@@ -1,0 +1,13 @@
+# kiwi-fox provider image: Tor, exposing SOCKS5 on the providers bridge.
+# Built by `kiwi-fox module setup tor` as kiwi-fox/tor:latest.
+FROM docker.io/library/alpine:3.20
+
+RUN apk add --no-cache tor
+
+COPY entrypoint.sh /usr/local/bin/kf-tor
+RUN chmod +x /usr/local/bin/kf-tor
+
+# Runs unprivileged; torrc and DataDirectory live under /tmp (a tmpfs at runtime).
+USER tor
+EXPOSE 9050
+ENTRYPOINT ["/usr/local/bin/kf-tor"]
