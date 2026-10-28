@@ -6,6 +6,8 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-28
+
 ### Added
 - Initial Tor provider module for kiwi-fox: a Tor client container exposing SOCKS5
   on the `kf-providers` bridge, with `IsolateSOCKSAuth` per-profile circuit
