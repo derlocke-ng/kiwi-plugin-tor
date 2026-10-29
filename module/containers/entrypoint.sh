@@ -9,7 +9,14 @@ TORRC=/tmp/torrc
 mkdir -p "$DATA"
 
 {
-    echo "SocksPort 0.0.0.0:9050 IsolateSOCKSAuth IsolateClientAddr"
+    # IsolateSOCKSAuth turns the per-profile credentials the gateway forwarder
+    # sends into per-profile circuits; with the forwarder in passthrough mode it
+    # also gives Tor Browser a circuit per first-party site. KeepAliveIsolateSOCKSAuth
+    # keeps a site's circuit alive while it still has open streams (past the usual
+    # MaxCircuitDirtiness), and ExtendedErrors maps .onion failures to the SOCKS5
+    # reply codes the forwarder relays back. Both match Tor Browser's own
+    # extensions.torlauncher.socks_port_flags.
+    echo "SocksPort 0.0.0.0:9050 IsolateSOCKSAuth IsolateClientAddr KeepAliveIsolateSOCKSAuth ExtendedErrors"
     echo "DataDirectory $DATA"
     echo "ClientOnly 1"
     echo "Log notice stdout"
