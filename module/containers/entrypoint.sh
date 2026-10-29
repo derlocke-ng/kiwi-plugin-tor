@@ -1,5 +1,5 @@
 #!/bin/sh
-# kiwi-fox tor provider — a Tor client exposing SOCKS5 on 0.0.0.0:9050, reachable
+# kiwi-proxy tor provider — a Tor client exposing SOCKS5 on 0.0.0.0:9050, reachable
 # on the providers bridge at this container's address. IsolateSOCKSAuth turns the
 # per-profile credentials the gateway forwarder sends into per-profile circuits.
 set -eu
