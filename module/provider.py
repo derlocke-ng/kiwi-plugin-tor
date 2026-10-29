@@ -1,9 +1,9 @@
 """Tor provider: exit through the Tor network.
 
 Tor already speaks SOCKS5, so there is no adapter — the daemon's SocksPort is the
-exit. Per-profile credentials become circuit isolation: kiwi-proxy mints a stable
-token per profile and the gateway forwarder sends it, so IsolateSOCKSAuth gives
-each profile its own circuit (its own exit), consistently across launches.
+exit. Per-exit credentials become circuit isolation: kiwi-proxy mints a stable
+token per exit and the gateway forwarder sends it, so IsolateSOCKSAuth gives
+each exit its own circuit (its own exit node), consistently across bring-ups.
 
 Free, no account. An exit country can be requested with --country / --lease.
 """
@@ -32,12 +32,12 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.2.0",
+    version="0.2.1",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
     requires=[],
-    notes="free; per-profile circuit isolation; pick an exit country with --country/--lease",
+    notes="free; per-exit circuit isolation; pick an exit country with --country/--lease",
 )
 
 
