@@ -1,7 +1,7 @@
 """Tor provider: exit through the Tor network.
 
 Tor already speaks SOCKS5, so there is no adapter — the daemon's SocksPort is the
-exit. Per-profile credentials become circuit isolation: kiwi-fox mints a stable
+exit. Per-profile credentials become circuit isolation: kiwi-proxy mints a stable
 token per profile and the gateway forwarder sends it, so IsolateSOCKSAuth gives
 each profile its own circuit (its own exit), consistently across launches.
 
@@ -10,8 +10,8 @@ Free, no account. An exit country can be requested with --country / --lease.
 
 from __future__ import annotations
 
-from kiwi_fox.core.models import ContainerSpec, Lease, ProviderManifest
-from kiwi_fox.core.providers.base import ContainerProvider
+from kiwi_proxy.models import ContainerSpec, Lease, ProviderManifest
+from kiwi_proxy.providers.base import ContainerProvider
 
 SOCKS_PORT = 9050
 
@@ -32,7 +32,7 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.1.0",
+    version="0.2.0",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
@@ -60,7 +60,7 @@ class TorProvider(ContainerProvider):
             cap_drop=["all"],
             security_opt=["no-new-privileges"],
             tmpfs=["/tmp"],  # torrc + DataDirectory, nothing persisted
-            labels={"kiwi-fox.module": self.name, "kiwi-fox.role": "provider"},
+            labels={"kiwi-proxy.module": self.name, "kiwi-proxy.role": "provider"},
         )
 
     def leases(self, ctx):
@@ -69,7 +69,7 @@ class TorProvider(ContainerProvider):
     def ready(self, ctx, container):
         # The SOCKS port answers at once, but a circuit is only usable once Tor has
         # bootstrapped — wait for that marker in the log.
-        from kiwi_fox.core import podman
+        from kiwi_proxy import podman
 
         return "Bootstrapped 100%" in podman.logs(container, tail=200)
 

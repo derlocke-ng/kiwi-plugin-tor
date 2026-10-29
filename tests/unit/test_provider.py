@@ -1,10 +1,10 @@
-"""The tor provider against the real kiwi-fox contract (loaded by conftest)."""
+"""The tor provider against the real kiwi-proxy contract (loaded by conftest)."""
 
 from __future__ import annotations
 
-from kiwi_fox.core import podman
-from kiwi_fox.core.models import ContainerSpec, Lease
-from kiwi_fox.core.providers.base import Provider
+from kiwi_proxy import podman
+from kiwi_proxy.models import ContainerSpec, Lease
+from kiwi_proxy.providers.base import Provider
 
 
 def test_manifest(manifest):

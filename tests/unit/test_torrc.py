@@ -17,12 +17,7 @@ def _render(tmp_path: Path, env_extra: dict[str, str]) -> str:
     bindir = tmp_path / "bin"
     bindir.mkdir()
     fake = bindir / "tor"
-    fake.write_text(
-        "#!/bin/sh\n"
-        '# args: -f <torrc>\n'
-        f'cp "$2" "{capture}"\n'
-        "exit 0\n"
-    )
+    fake.write_text(f'#!/bin/sh\n# args: -f <torrc>\ncp "$2" "{capture}"\nexit 0\n')
     fake.chmod(0o755)
     env = {**os.environ, "PATH": f"{bindir}:{os.environ['PATH']}", **env_extra}
     subprocess.run(["sh", str(ENTRYPOINT)], env=env, check=True, timeout=30)
