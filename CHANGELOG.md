@@ -6,6 +6,15 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-29
+
+### Changed
+- torrc SocksPort now also sets `KeepAliveIsolateSOCKSAuth` and `ExtendedErrors`,
+  matching Tor Browser's own launcher flags: a site's circuit survives while it has
+  open streams, and `.onion` failures map to the SOCKS5 reply codes the gateway
+  forwarder relays back. Harmless for existing Camoufox/Firefox profiles; it is what
+  lets the coming Tor Browser engine keep a circuit per first-party site.
+
 ## [0.1.0] - 2026-10-28
 
 ### Added
