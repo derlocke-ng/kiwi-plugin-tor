@@ -6,6 +6,18 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-07
+
+### Changed
+- **Every exit country, not eight.** The module tells kiwi-proxy 0.4 where Tor
+  has running exit relays — from the Tor project's directory (Onionoo), counted
+  per country and cached for a day in the module's state — and the exit editor
+  offers that as a searchable list with names and counts (`kiwi-proxy module
+  countries tor`). With the directory out of reach and nothing cached, the
+  twelve well-populated countries are offered.
+- The country is the whole choice: `leases()` is empty, Tor picks the relay.
+  Exits made with `--lease de` by earlier versions keep working.
+
 ## [0.2.1] - 2026-10-29
 
 ### Changed

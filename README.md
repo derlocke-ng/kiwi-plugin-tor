@@ -23,19 +23,19 @@ kiwi-proxy module setup tor             # builds kiwi-proxy/tor:latest  (or: kiw
 
 ```sh
 kiwi-proxy module list                  # tor should appear
-kiwi-proxy module leases tor            # a few common exit countries
+kiwi-proxy module countries tor         # where Tor has exit relays right now, with counts
 kiwi-proxy add work --module tor --country de   # an exit: `kiwi-proxy up work`, --expose PORT for the host
-kiwi-fox new work --module tor --country de    # Tor produces the endpoint
+kiwi-fox new work --exit work           # a browser profile on it
 kiwi-fox run work
 
-# or bring the provider up yourself and point a profile at it:
-kiwi-proxy module up tor --lease de
-kiwi-fox new work socks5://<ip>:9050 --module tor --lease de
+# or bring the provider up yourself, for anything on the bridge that speaks SOCKS5:
+kiwi-proxy module up tor --country de
 ```
 
-An exit country (`--country` / `--lease`, a two-letter code) is held with
-`StrictNodes`, so the exit really is in that country or the circuit fails rather
-than silently exiting elsewhere. Omit it to let Tor choose.
+An exit country (`--country`, a two-letter code; the Kiwi Proxy app offers the
+list) is held with `StrictNodes`, so the exit really is in that country or the
+circuit fails rather than silently exiting elsewhere. Omit it to let Tor choose.
+Exits made with `--lease de` by earlier versions mean the same.
 
 ## How it fits
 
