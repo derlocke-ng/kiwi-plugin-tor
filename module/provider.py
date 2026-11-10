@@ -60,7 +60,7 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.3.0",
+    version="0.3.1",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
@@ -74,6 +74,8 @@ class TorProvider(ContainerProvider):
     # A fresh circuit can take a while to bootstrap; wait for it before the window
     # opens so the first page load does not fail.
     ready_timeout = 120.0
+    # Left out of kiwi-proxy's snapshots: a cache fetched again within a day.
+    snapshot_exclude = (CACHE_FILE,)
 
     def container_spec(self, ctx, *, lease=None, country=None):
         env = {}

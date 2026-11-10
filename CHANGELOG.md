@@ -6,6 +6,11 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-10
+
+- Snapshots (kiwi-proxy 0.8) leave out the exit-country cache; it is fetched again
+  within a day (`snapshot_exclude`).
+
 ## [0.3.0] - 2026-11-07
 
 ### Changed

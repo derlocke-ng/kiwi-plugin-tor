@@ -98,3 +98,10 @@ def test_countries_fall_back_to_the_well_populated_ones(module, provider, ctx, m
     found = provider.countries(ctx)
     assert [c.code for c in found] == [cc.upper() for cc in module.EXIT_COUNTRIES]
     assert all(c.count is None for c in found) and found[0].name == "Germany"
+
+
+def test_snapshots_leave_out_what_the_module_rebuilds():
+    """kiwi-proxy 0.8 reads this with getattr; older versions ignore it."""
+    from module.provider import PROVIDER
+
+    assert "exit-countries.json" in PROVIDER.snapshot_exclude
