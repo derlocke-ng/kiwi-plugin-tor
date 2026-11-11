@@ -24,7 +24,9 @@ kiwi-proxy module setup tor             # builds kiwi-proxy/tor:latest  (or: kiw
 ```sh
 kiwi-proxy module list                  # tor should appear
 kiwi-proxy module countries tor         # where Tor has exit relays right now, with counts
+kiwi-proxy module nodes tor --country se        # the exit relays themselves, fastest first
 kiwi-proxy add work --module tor --country de   # an exit: `kiwi-proxy up work`, --expose PORT for the host
+kiwi-proxy add research --module tor --country de,se,ch --never hu,tr   # only these, never those
 kiwi-fox new work --exit work           # a browser profile on it
 kiwi-fox run work
 
@@ -32,10 +34,13 @@ kiwi-fox run work
 kiwi-proxy module up tor --country de
 ```
 
-An exit country (`--country`, a two-letter code; the Kiwi Proxy app offers the
-list) is held with `StrictNodes`, so the exit really is in that country or the
-circuit fails rather than silently exiting elsewhere. Omit it to let Tor choose.
-Exits made with `--lease de` by earlier versions mean the same.
+Exit countries and relays (`--country de,se`, `--node FINGERPRINT`; the Kiwi Proxy
+app has a list with Only and Never per country) are held with `StrictNodes`, so the
+exit really is one of them or the circuit fails rather than silently exiting
+elsewhere. `--never` countries are never used (`ExcludeExitNodes`), and Kiwi Proxy's
+Tor preference can block the Five, Nine or Fourteen Eyes for every Tor exit. Omit
+them all to let Tor choose. Each selection runs its own Tor; exits made with
+`--lease de` or one `--country` by earlier versions mean the same as before.
 
 ## How it fits
 

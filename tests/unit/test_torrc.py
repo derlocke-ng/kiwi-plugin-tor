@@ -45,3 +45,20 @@ def test_exit_country_is_pinned_when_asked(tmp_path):
 
 def test_no_exit_country_by_default(tmp_path):
     assert "ExitNodes" not in _render(tmp_path, {})
+
+
+def test_only_and_never_lists(tmp_path):
+    torrc = _render(
+        tmp_path,
+        {"KF_TOR_EXIT_NODES": "{de},{se},$" + "A" * 40, "KF_TOR_EXCLUDE_EXIT_NODES": "{hu},{us}"},
+    )
+    assert "ExitNodes {de},{se},$" + "A" * 40 in torrc
+    assert "StrictNodes 1" in torrc
+    assert "ExcludeExitNodes {hu},{us}" in torrc
+
+
+def test_never_alone_leaves_the_exits_to_tor(tmp_path):
+    torrc = _render(tmp_path, {"KF_TOR_EXCLUDE_EXIT_NODES": "{gb}"})
+    assert "ExcludeExitNodes {gb}" in torrc and "ExitNodes {" not in torrc.replace(
+        "ExcludeExitNodes", ""
+    )

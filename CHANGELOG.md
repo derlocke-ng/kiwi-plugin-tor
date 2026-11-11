@@ -6,6 +6,18 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-11
+
+### Added
+- **Several exit countries and relays, and countries never to use** (kiwi-proxy
+  0.9: `exit_selection`): the container's torrc gets `ExitNodes {de},{se},$FP`
+  with `StrictNodes 1` and `ExcludeExitNodes {hu},…`. An older kiwi-proxy still
+  asks for one country, which still works.
+- **The relays themselves:** the running exit relays from Onionoo with nickname,
+  fingerprint, country, network and advertised speed, cached a day
+  (`exit-relays.json`, left out of snapshots like the old count cache); the
+  country counts come from the same list.
+
 ## [0.3.1] - 2026-11-10
 
 - Snapshots (kiwi-proxy 0.8) leave out the exit-country cache; it is fetched again

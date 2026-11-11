@@ -20,11 +20,19 @@ mkdir -p "$DATA"
     echo "DataDirectory $DATA"
     echo "ClientOnly 1"
     echo "Log notice stdout"
-    if [ -n "${KF_TOR_EXIT_COUNTRY:-}" ]; then
-        # The user asked for this country, so hold to it (StrictNodes) rather than
-        # silently exiting elsewhere.
+    # Where the exit may leave. Only these countries ({de}) and relays ($FP), held
+    # to (StrictNodes) rather than silently exiting elsewhere; never these
+    # countries, which win over the first list in Tor.
+    if [ -n "${KF_TOR_EXIT_NODES:-}" ]; then
+        echo "ExitNodes ${KF_TOR_EXIT_NODES}"
+        echo "StrictNodes 1"
+    elif [ -n "${KF_TOR_EXIT_COUNTRY:-}" ]; then
+        # an older kiwi-proxy: one country
         echo "ExitNodes {${KF_TOR_EXIT_COUNTRY}}"
         echo "StrictNodes 1"
+    fi
+    if [ -n "${KF_TOR_EXCLUDE_EXIT_NODES:-}" ]; then
+        echo "ExcludeExitNodes ${KF_TOR_EXCLUDE_EXIT_NODES}"
     fi
 } > "$TORRC"
 

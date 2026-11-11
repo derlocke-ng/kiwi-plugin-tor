@@ -5,7 +5,9 @@ exit. Per-exit credentials become circuit isolation: kiwi-proxy mints a stable
 token per exit and the gateway forwarder sends it, so IsolateSOCKSAuth gives
 each exit its own circuit (its own exit node), consistently across bring-ups.
 
-Free, no account. An exit country can be requested with --country / --lease.
+Free, no account. Where an exit may leave is chosen per exit: only some
+countries and relays, never some countries (kiwi-proxy 0.9: `exit_selection`);
+older kiwi-proxy versions ask for one country.
 """
 
 from __future__ import annotations
@@ -24,15 +26,23 @@ try:  # kiwi-proxy ≥ 0.4 asks modules where they can exit; older ones never do
 except ImportError:  # pragma: no cover - kiwi-proxy 0.3
     _countries = None
     Country = None  # type: ignore[assignment,misc]
+try:  # kiwi-proxy ≥ 0.9 offers the relays themselves
+    from kiwi_proxy.providers.base import Node
+except ImportError:  # pragma: no cover - older kiwi-proxy
+    Node = None  # type: ignore[assignment,misc]
 
 SOCKS_PORT = 9050
 
-# Where Tor has running exit relays, from the Tor project's own directory
-# (Onionoo), counted per country and cached for a day; these are what the
-# country list offers. Any country code works with --country regardless — Tor
-# just finds no circuit when there is no exit there.
-ONIONOO = "https://onionoo.torproject.org/details?type=relay&flag=Exit&running=true&fields=country"
-CACHE_FILE = "exit-countries.json"
+# The running exit relays, from the Tor project's own directory (Onionoo), cached
+# for a day: the node list offers them (name, country, network, speed,
+# fingerprint) and the country list counts them. Any country code works
+# regardless — Tor just finds no circuit when there is no exit there.
+ONIONOO = (
+    "https://onionoo.torproject.org/details?type=relay&flag=Exit&running=true"
+    "&fields=nickname,fingerprint,country,as_name,advertised_bandwidth"
+)
+CACHE_FILE = "exit-relays.json"
+OLD_CACHE_FILE = "exit-countries.json"  # 0.3: counts only
 CACHE_SECONDS = 24 * 3600
 # When the directory is out of reach and nothing is cached: the well-populated ones.
 EXIT_COUNTRIES = {
@@ -60,12 +70,12 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.3.1",
+    version="0.4.0",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
     requires=[],
-    notes="free; per-exit circuit isolation; pick an exit country with --country",
+    notes="free; per-exit circuit isolation; --country DE,SE --never HU --node FINGERPRINT",
 )
 
 
@@ -75,13 +85,28 @@ class TorProvider(ContainerProvider):
     # opens so the first page load does not fail.
     ready_timeout = 120.0
     # Left out of kiwi-proxy's snapshots: a cache fetched again within a day.
-    snapshot_exclude = (CACHE_FILE,)
+    snapshot_exclude = (CACHE_FILE, OLD_CACHE_FILE)
+    # kiwi-proxy 0.9 reads this with getattr: several countries and relays to exit
+    # through only, countries never to exit through, per exit.
+    exit_selection = True
+    lease_noun = "relay"
 
-    def container_spec(self, ctx, *, lease=None, country=None):
+    def container_spec(self, ctx, *, lease=None, country=None, selection=None):
         env = {}
-        cc = (lease or country or "").lower()
-        if cc:
-            env["KF_TOR_EXIT_COUNTRY"] = cc
+        if selection is not None:
+            exits = [f"{{{cc.lower()}}}" for cc in selection.only_countries]
+            exits += [f"${fp}" for fp in selection.only_nodes]
+            if exits:
+                env["KF_TOR_EXIT_NODES"] = ",".join(exits)
+            if selection.never_countries:
+                env["KF_TOR_EXCLUDE_EXIT_NODES"] = ",".join(
+                    f"{{{cc.lower()}}}" for cc in selection.never_countries
+                )
+        else:
+            # an older kiwi-proxy: one country, as a lease (before 0.4) or a country
+            cc = (lease or country or "").lower()
+            if cc:
+                env["KF_TOR_EXIT_COUNTRY"] = cc
         return ContainerSpec(
             name=ctx.container_name(lease),
             image=ctx.image,
@@ -98,9 +123,9 @@ class TorProvider(ContainerProvider):
         # `--lease de` by earlier versions still work: container_spec reads either.)
         return []
 
-    def exit_counts(self, ctx) -> dict[str, int]:
-        """Running exit relays per country, from Onionoo, cached a day in the
-        module's state; the static list without counts when neither is there."""
+    def relays(self, ctx) -> list[dict]:
+        """The running exit relays from Onionoo, cached a day in the module's
+        state; a stale cache when the directory is away; [] with neither."""
         cache = ctx.state_dir / CACHE_FILE
         try:
             if cache.exists() and time.time() - cache.stat().st_mtime < CACHE_SECONDS:
@@ -110,12 +135,11 @@ class TorProvider(ContainerProvider):
         try:
             found = _fetch_json(ONIONOO)
             relays = found.get("relays", []) if isinstance(found, dict) else []
-            counts = Counter(r.get("country") for r in relays if r.get("country"))
-            counts = {cc.upper(): n for cc, n in counts.items()}
-            if counts:
+            relays = [r for r in relays if isinstance(r, dict) and r.get("country")]
+            if relays:
                 ctx.state_dir.mkdir(parents=True, exist_ok=True)
-                cache.write_text(json.dumps(counts))
-                return counts
+                cache.write_text(json.dumps(relays))
+                return relays
         except Exception:  # noqa: BLE001 - the directory, the network
             pass
         try:
@@ -123,7 +147,36 @@ class TorProvider(ContainerProvider):
                 return json.loads(cache.read_text())  # stale beats nothing
         except (OSError, ValueError):
             pass
-        return {}
+        return []
+
+    def exit_counts(self, ctx) -> dict[str, int]:
+        """Running exit relays per country; {} when the directory was never
+        reached (an 0.3 cache of counts is read then)."""
+        relays = self.relays(ctx)
+        if relays:
+            counts = Counter(r["country"].upper() for r in relays)
+            return dict(counts)
+        try:
+            return json.loads((ctx.state_dir / OLD_CACHE_FILE).read_text())
+        except (OSError, ValueError):
+            return {}
+
+    def nodes(self, ctx):
+        """The exit relays to choose from, fastest first (kiwi-proxy 0.9)."""
+        if Node is None:  # pragma: no cover - an older kiwi-proxy never asks
+            return []
+        out = [
+            Node(
+                fingerprint=str(r.get("fingerprint", "")).upper(),
+                name=str(r.get("nickname", "")),
+                country=str(r.get("country", "")).upper(),
+                operator=str(r.get("as_name") or ""),
+                speed=int(r.get("advertised_bandwidth") or 0),
+            )
+            for r in self.relays(ctx)
+            if r.get("fingerprint")
+        ]
+        return sorted(out, key=lambda n: (-n.speed, n.name.lower()))
 
     def countries(self, ctx):
         if Country is None:  # pragma: no cover - kiwi-proxy 0.3 never asks

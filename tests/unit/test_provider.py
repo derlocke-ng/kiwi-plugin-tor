@@ -68,7 +68,7 @@ def test_countries_come_from_the_directory_with_counts(module, provider, ctx, mo
     ]
     assert asked == [module.ONIONOO] and "flag=Exit" in asked[0] and "running=true" in asked[0]
     cache = json.loads((ctx.state_dir / module.CACHE_FILE).read_text())
-    assert cache == {"DE": 3, "NL": 1, "US": 1}
+    assert sorted(r["country"] for r in cache) == ["de", "de", "de", "nl", "us"]
 
 
 def test_countries_are_cached_for_a_day(module, provider, ctx, monkeypatch):
@@ -104,4 +104,55 @@ def test_snapshots_leave_out_what_the_module_rebuilds():
     """kiwi-proxy 0.8 reads this with getattr; older versions ignore it."""
     from module.provider import PROVIDER
 
-    assert "exit-countries.json" in PROVIDER.snapshot_exclude
+    assert {"exit-relays.json", "exit-countries.json"} <= set(PROVIDER.snapshot_exclude)
+
+
+def _relay(nick, cc, fp, asn="AS1", bw=100):
+    return {
+        "nickname": nick,
+        "country": cc,
+        "fingerprint": fp,
+        "as_name": asn,
+        "advertised_bandwidth": bw,
+    }
+
+
+def test_nodes_come_from_the_directory_fastest_first(module, provider, ctx, monkeypatch):
+    fp = "A" * 40
+    monkeypatch.setattr(
+        module,
+        "_fetch_json",
+        lambda url, timeout=20: {
+            "relays": [
+                _relay("slow", "de", "b" * 40, bw=10),
+                _relay("fast", "se", fp.lower(), "Bahnhof", 900),
+            ]
+        },
+    )
+    nodes = provider.nodes(ctx)
+    assert [(n.name, n.country, n.operator, n.speed) for n in nodes] == [
+        ("fast", "SE", "Bahnhof", 900),
+        ("slow", "DE", "AS1", 10),
+    ]
+    assert nodes[0].fingerprint == fp  # upper case, as Tor takes it after a $
+    assert {c.code: c.count for c in provider.countries(ctx)} == {"SE": 1, "DE": 1}
+
+
+def test_a_selection_becomes_the_container_env(provider, ctx):
+    from types import SimpleNamespace
+
+    sel = SimpleNamespace(
+        only_countries=("DE", "SE"), only_nodes=("A" * 40,), never_countries=("HU", "US")
+    )
+    env = provider.container_spec(ctx, lease="xabc", selection=sel).env
+    assert env == {
+        "KF_TOR_EXIT_NODES": "{de},{se},$" + "A" * 40,
+        "KF_TOR_EXCLUDE_EXIT_NODES": "{hu},{us}",
+    }
+    never_only = SimpleNamespace(only_countries=(), only_nodes=(), never_countries=("GB",))
+    assert provider.container_spec(ctx, selection=never_only).env == {
+        "KF_TOR_EXCLUDE_EXIT_NODES": "{gb}"
+    }
+    # what an older kiwi-proxy asks for
+    assert provider.container_spec(ctx, country="nl").env == {"KF_TOR_EXIT_COUNTRY": "nl"}
+    assert provider.exit_selection is True
