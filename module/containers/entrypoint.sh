@@ -43,6 +43,13 @@ mkdir -p "$DATA"
     # control port listens on the container's own loopback, with a cookie.
     echo "ControlPort 127.0.0.1:9051"
     echo "CookieAuthentication 1"
+    # A Tor exit for Tor Browser: a control port on the providers bridge for its
+    # gateway's filter (New Identity, the circuit display, onion-site keys),
+    # password-protected; nothing else is let through that filter.
+    if [ -n "${KF_TOR_CONTROL_PASSWORD:-}" ]; then
+        echo "ControlPort 0.0.0.0:9052"
+        echo "HashedControlPassword $(tor --quiet --hash-password "$KF_TOR_CONTROL_PASSWORD" | tail -1)"
+    fi
 } > "$TORRC"
 
 exec tor -f "$TORRC"

@@ -70,7 +70,7 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.4.1",
+    version="0.5.0",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
@@ -102,6 +102,9 @@ class TorProvider(ContainerProvider):
                 env["KF_TOR_EXCLUDE_EXIT_NODES"] = ",".join(
                     f"{{{cc.lower()}}}" for cc in selection.never_countries
                 )
+            if getattr(selection, "control_password", ""):
+                # Tor Browser's control port on the bridge, for the gateway's filter
+                env["KF_TOR_CONTROL_PASSWORD"] = selection.control_password
             if getattr(selection, "never_anywhere", ()):
                 env["KF_TOR_EXCLUDE_NODES"] = ",".join(
                     f"{{{cc.lower()}}}" for cc in selection.never_anywhere

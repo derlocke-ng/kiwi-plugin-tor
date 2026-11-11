@@ -6,6 +6,13 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-11
+
+### Added
+- A control port on the providers bridge (9052, `HashedControlPassword`) when
+  kiwi-proxy 0.10 asks for one: a Tor exit's own Tor for Tor Browser, reached only
+  through its gateway's filter.
+
 ## [0.4.1] - 2026-11-11
 
 ### Added
