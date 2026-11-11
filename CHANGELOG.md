@@ -6,6 +6,14 @@ latest tag matching `^v?[0-9]+(\.[0-9]+){0,3}$`.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-11
+
+### Added
+- `ExcludeNodes` for the Eyes group at every position when kiwi-proxy 0.9.3's
+  preference asks for it.
+- nyx in the image and a control port on the container's own loopback (cookie
+  authentication), for `kiwi-proxy nyx EXIT`. The image builds without nyx too.
+
 ## [0.4.0] - 2026-11-11
 
 ### Added

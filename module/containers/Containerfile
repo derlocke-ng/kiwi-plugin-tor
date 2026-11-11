@@ -3,6 +3,8 @@
 FROM docker.io/library/alpine:3.20
 
 RUN apk add --no-cache tor
+# nyx, Tor's monitor (`kiwi-proxy nyx EXIT`); the image works without it
+RUN apk add --no-cache nyx || true
 
 COPY entrypoint.sh /usr/local/bin/kf-tor
 RUN chmod +x /usr/local/bin/kf-tor

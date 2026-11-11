@@ -62,3 +62,9 @@ def test_never_alone_leaves_the_exits_to_tor(tmp_path):
     assert "ExcludeExitNodes {gb}" in torrc and "ExitNodes {" not in torrc.replace(
         "ExcludeExitNodes", ""
     )
+
+
+def test_every_relay_and_the_monitor(tmp_path):
+    torrc = _render(tmp_path, {"KF_TOR_EXCLUDE_NODES": "{us},{gb}"})
+    assert "ExcludeNodes {us},{gb}" in torrc and "StrictNodes 1" in torrc
+    assert "ControlPort 127.0.0.1:9051" in torrc and "CookieAuthentication 1" in torrc

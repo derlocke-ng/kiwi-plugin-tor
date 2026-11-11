@@ -70,7 +70,7 @@ MANIFEST = ProviderManifest(
     name="tor",
     title="Tor",
     description="exit through the Tor network",
-    version="0.4.0",
+    version="0.4.1",
     socks_port=SOCKS_PORT,
     auth="isolation",
     needs_account=False,
@@ -101,6 +101,10 @@ class TorProvider(ContainerProvider):
             if selection.never_countries:
                 env["KF_TOR_EXCLUDE_EXIT_NODES"] = ",".join(
                     f"{{{cc.lower()}}}" for cc in selection.never_countries
+                )
+            if getattr(selection, "never_anywhere", ()):
+                env["KF_TOR_EXCLUDE_NODES"] = ",".join(
+                    f"{{{cc.lower()}}}" for cc in selection.never_anywhere
                 )
         else:
             # an older kiwi-proxy: one country, as a lease (before 0.4) or a country

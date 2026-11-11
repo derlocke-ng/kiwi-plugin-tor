@@ -34,6 +34,15 @@ mkdir -p "$DATA"
     if [ -n "${KF_TOR_EXCLUDE_EXIT_NODES:-}" ]; then
         echo "ExcludeExitNodes ${KF_TOR_EXCLUDE_EXIT_NODES}"
     fi
+    # never any relay of a circuit in these countries (entry, middle, exit), held to
+    if [ -n "${KF_TOR_EXCLUDE_NODES:-}" ]; then
+        echo "ExcludeNodes ${KF_TOR_EXCLUDE_NODES}"
+        echo "StrictNodes 1"
+    fi
+    # Tor's monitor (nyx, `kiwi-proxy nyx EXIT`) inside this container only: the
+    # control port listens on the container's own loopback, with a cookie.
+    echo "ControlPort 127.0.0.1:9051"
+    echo "CookieAuthentication 1"
 } > "$TORRC"
 
 exec tor -f "$TORRC"
